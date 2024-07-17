@@ -12,10 +12,6 @@ type InsertPayload struct {
 	Type  string `json:"Type"`
 }
 
-type GetPayload struct {
-	Names []string
-}
-
 type GetResponse struct {
 	Parameters []InsertPayload `json:"Parameters"`
 }
