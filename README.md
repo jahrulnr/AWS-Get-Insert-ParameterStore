@@ -6,7 +6,7 @@ This package provides a set of functions to manage parameters in the AWS Paramet
 
 The package is divided into three files:
 
-1. **struct.go**: Defines the data structures used throughout the package, including `InsertPayload` and `GetResponse`.
+1. **config.go**: Defines the data structures used throughout the package, including `InsertPayload` and `GetResponse`.
 2. **core.go**: Implements the core functionality of the package, including retrieving parameters from the AWS Parameter Store, generating a new list of parameters, and inserting parameters into the store.
 3. **main.go**: Provides the entry point for the package, allowing users to interact with the package through command-line arguments.
 
