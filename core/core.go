@@ -47,6 +47,7 @@ func executeGetParameterStore() {
 }
 
 func GenerateList() {
+	// create to json
 	list := getPayloadParameterStore(FilePath, FileName)
 	newJson := GetResponse{
 		Parameters: list,
@@ -63,7 +64,22 @@ func GenerateList() {
 		log.Println(err)
 	}
 	file.Close()
-	time.Sleep(time.Second * time.Duration(5))
+
+	// create to env
+	listEnv := getEnvParameterStore(FilePath, FileName)
+	file, err = os.OpenFile(FilePath+"/"+FileNameGenerate+".env", os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	joinContents = []byte(strings.Join(listEnv, "\n"))
+	_, err = file.Write(joinContents)
+	if err != nil {
+		log.Println(err)
+	}
+
+	file.Close()
+	time.Sleep(time.Second * time.Duration(3))
 }
 
 func InsertParameterStore() {
@@ -100,6 +116,21 @@ func getPayloadParameterStore(filePath, fileName string) []InsertPayload {
 			Value: paramList.Value,
 			Type:  paramList.Type,
 		})
+	}
+
+	return inserPayloads
+}
+
+func getEnvParameterStore(filePath, fileName string) []string {
+	var payload GetResponse
+	getParameter := getParameterStore(filePath, fileName)
+	json.Unmarshal(getParameter, &payload)
+
+	var inserPayloads []string
+	for _, paramList := range payload.Parameters {
+		inserPayloads = append(inserPayloads,
+			strings.ReplaceAll(paramList.Name, InitialParameter, "")+"="+paramList.Value,
+		)
 	}
 
 	return inserPayloads

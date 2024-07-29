@@ -2,6 +2,7 @@ package main
 
 import (
 	"aws-param-store/core"
+	"log"
 	"os"
 )
 
@@ -17,6 +18,8 @@ func main() {
 			core.GenerateList()
 		case "insertlist":
 			core.InsertParameterStore()
+		default:
+			log.Println("Command not found")
 		}
 	}
 }
