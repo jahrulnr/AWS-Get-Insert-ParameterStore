@@ -3,8 +3,8 @@ package core
 const FilePath = "data"
 const FileName = "list.json"
 const FileNameGenerate = "newList.json"
-const InitialParameter = "/preprod/cms/"
-const NewParameter = "/preprod/cms/"
+const InitialParameter = "/prod/cms/"
+const NewParameter = "/prod/cms/"
 const ARNParameterStore = "arn:aws:ssm:ap-southeast-3::parameter"
 
 type InsertPayload struct {

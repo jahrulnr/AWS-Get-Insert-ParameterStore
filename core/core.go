@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -184,4 +185,48 @@ func getFromParameterStore(filePath, fileName string) []byte {
 	}
 	file.Close()
 	return jsonContents
+}
+
+func CreatePayloadFromEnv() {
+	createPayloadFromEnv(FilePath, FileName)
+}
+
+func createPayloadFromEnv(filepath, fileName string) {
+	file := getFromParameterStore(filepath, "env")
+	split := strings.Split(
+		strings.ReplaceAll(string(file), "\n\n", "\n"),
+		"\n")
+
+	payload := &GetResponse{}
+	payloadParams := make([]InsertPayload, 0)
+	for _, env := range split {
+		envLine := strings.Split(env, "=")
+		fmt.Println(envLine)
+		if len(envLine) > 0 && envLine[1] != "" {
+			paramPayload := InsertPayload{
+				Name:  NewParameter + envLine[0],
+				Value: envLine[1],
+				Type:  "String",
+			}
+			if paramPayload.Name != NewParameter {
+				payloadParams = append(payloadParams, paramPayload)
+			}
+		}
+	}
+	payload.Parameters = payloadParams
+
+	// log.Println(payload)
+	filename := FilePath + "/" + FileNameGenerate
+	os.Remove(filename)
+	wfile, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wfile.Close()
+
+	joinContents, _ := json.MarshalIndent(payload, "", "    ")
+	_, err = wfile.Write(joinContents)
+	if err != nil {
+		log.Println(err)
+	}
 }

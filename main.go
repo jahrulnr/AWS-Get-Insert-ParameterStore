@@ -19,6 +19,8 @@ func main() {
 			core.GenerateList()
 		case "insertlist":
 			core.InsertParameterStore()
+		case "createFromEnv":
+			core.CreatePayloadFromEnv()
 		default:
 			fmt.Println("Command not found")
 		}
@@ -26,5 +28,5 @@ func main() {
 		return
 	}
 
-	fmt.Println("Available command: getlist, generatelist, insertlist")
+	fmt.Println("Available command: getlist, generatelist, createFromEnv, insertlist")
 }
