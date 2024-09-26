@@ -3,8 +3,9 @@ package core
 const FilePath = "data"
 const FileName = "list.json"
 const FileNameGenerate = "newList.json"
-const InitialParameter = "/preprod/drupal"
-const NewParameter = "/preprod/outpost/drupal"
+const InitialParameter = "/preprod/cms/"
+const NewParameter = "/preprod/cms/"
+const ARNParameterStore = "arn:aws:ssm:ap-southeast-3::parameter"
 
 type InsertPayload struct {
 	Name  string `json:"Name"`
@@ -14,4 +15,13 @@ type InsertPayload struct {
 
 type GetResponse struct {
 	Parameters []InsertPayload `json:"Parameters"`
+}
+
+type TaskDefinitionEnvironment struct {
+	Name      string `json:"name"`
+	ValueFrom string `json:"valueFrom"`
+}
+
+type TaskDefinitionSecret struct {
+	Secrets []TaskDefinitionEnvironment `json:"secrets"`
 }

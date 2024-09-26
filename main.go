@@ -2,12 +2,12 @@ package main
 
 import (
 	"aws-param-store/core"
-	"log"
+	"fmt"
 	"os"
 )
 
 func main() {
-	if os.Args != nil {
+	if len(os.Args) > 1 && os.Args != nil {
 		switch os.Args[1] {
 		case "getlist":
 			os.Mkdir(core.FilePath, 0755)
@@ -15,11 +15,16 @@ func main() {
 			core.GetParameterStore()
 		case "generatelist":
 			os.Remove(core.FilePath + "/" + core.FileNameGenerate)
+			os.Remove(core.FilePath + "/" + core.FileNameGenerate + ".env")
 			core.GenerateList()
 		case "insertlist":
 			core.InsertParameterStore()
 		default:
-			log.Println("Command not found")
+			fmt.Println("Command not found")
 		}
+
+		return
 	}
+
+	fmt.Println("Available command: getlist, generatelist, insertlist")
 }

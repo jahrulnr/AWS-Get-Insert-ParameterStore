@@ -20,13 +20,17 @@ func GetParameterStore() {
 }
 
 func executeGetParameterStore() {
-	cmd := exec.Command("aws", "ssm", "get-parameters-by-path", "--path", InitialParameter, "--recursive", "--with-decryption")
+	cmd := exec.Command("/usr/local/bin/aws", "ssm", "get-parameters-by-path", "--path", InitialParameter, "--recursive", "--with-decryption")
 	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "AWS_REGION=ap-southeast-3")
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	_ = cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(stderr.String())
+	}
 	if stdout.String() != "[]" {
 		file, err := os.OpenFile(FilePath+"/"+FileName, os.O_CREATE|os.O_RDWR, 0644)
 		if err != nil {
@@ -48,7 +52,7 @@ func executeGetParameterStore() {
 
 func GenerateList() {
 	// create to json
-	list := getPayloadParameterStore(FilePath, FileName)
+	list := getPayloadFromParameterStore(FilePath, FileName)
 	newJson := GetResponse{
 		Parameters: list,
 	}
@@ -58,7 +62,7 @@ func GenerateList() {
 		log.Fatal(err)
 	}
 
-	joinContents, _ := json.MarshalIndent(newJson, "", "  ")
+	joinContents, _ := json.MarshalIndent(newJson, "", "    ")
 	_, err = file.Write(joinContents)
 	if err != nil {
 		log.Println(err)
@@ -66,7 +70,7 @@ func GenerateList() {
 	file.Close()
 
 	// create to env
-	listEnv := getEnvParameterStore(FilePath, FileName)
+	listEnv := getEnvFromParameterStore(FilePath, FileName)
 	file, err = os.OpenFile(FilePath+"/"+FileNameGenerate+".env", os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -78,19 +82,28 @@ func GenerateList() {
 		log.Println(err)
 	}
 
-	file.Close()
-	time.Sleep(time.Second * time.Duration(3))
+	listTDF := getTDFFromParameterStore(FilePath, FileName)
+	file, err = os.OpenFile(FilePath+"/"+FileNameGenerate+".tdf.json", os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	joinContents, _ = json.MarshalIndent(listTDF, "", "    ")
+	_, err = file.Write(joinContents)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func InsertParameterStore() {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
-	list := getPayloadParameterStore(FilePath, FileNameGenerate)
+	list := getPayloadFromParameterStore(FilePath, FileNameGenerate)
 	for _, payload := range list {
 		json, _ := json.Marshal(payload)
-		log.Println("aws", "ssm", "put-parameter", "--cli-input-json", "'"+string(json)+"'", "--overwrite")
-		cmd := exec.Command("aws", "ssm", "put-parameter", "--cli-input-json", string(json), "--overwrite")
+		log.Println("/usr/local/bin/aws", "ssm", "put-parameter", "--cli-input-json", "'"+string(json)+"'", "--overwrite", "--region", "ap-southeast-3")
+		cmd := exec.Command("/usr/local/bin/aws", "ssm", "put-parameter", "--cli-input-json", string(json), "--overwrite", "--region", "ap-southeast-3")
 		cmd.Env = os.Environ()
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
@@ -104,9 +117,10 @@ func InsertParameterStore() {
 	log.Println(stdout.String())
 }
 
-func getPayloadParameterStore(filePath, fileName string) []InsertPayload {
+// utils
+func getPayloadFromParameterStore(filePath, fileName string) []InsertPayload {
 	var payload GetResponse
-	getParameter := getParameterStore(filePath, fileName)
+	getParameter := getFromParameterStore(filePath, fileName)
 	json.Unmarshal(getParameter, &payload)
 
 	var inserPayloads []InsertPayload
@@ -121,9 +135,9 @@ func getPayloadParameterStore(filePath, fileName string) []InsertPayload {
 	return inserPayloads
 }
 
-func getEnvParameterStore(filePath, fileName string) []string {
+func getEnvFromParameterStore(filePath, fileName string) []string {
 	var payload GetResponse
-	getParameter := getParameterStore(filePath, fileName)
+	getParameter := getFromParameterStore(filePath, fileName)
 	json.Unmarshal(getParameter, &payload)
 
 	var inserPayloads []string
@@ -136,7 +150,27 @@ func getEnvParameterStore(filePath, fileName string) []string {
 	return inserPayloads
 }
 
-func getParameterStore(filePath, fileName string) []byte {
+func getTDFFromParameterStore(filePath, fileName string) TaskDefinitionSecret {
+	var payload GetResponse
+	getParameter := getFromParameterStore(filePath, fileName)
+	json.Unmarshal(getParameter, &payload)
+
+	var taskDef []TaskDefinitionEnvironment
+	for _, paramList := range payload.Parameters {
+		taskDef = append(taskDef, TaskDefinitionEnvironment{
+			Name:      strings.ReplaceAll(paramList.Name, InitialParameter, ""),
+			ValueFrom: ARNParameterStore + paramList.Name,
+		},
+		)
+	}
+
+	taskDefinition := TaskDefinitionSecret{
+		Secrets: taskDef,
+	}
+	return taskDefinition
+}
+
+func getFromParameterStore(filePath, fileName string) []byte {
 	file, err := os.Open(filepath.Join(filePath, fileName))
 	if err != nil {
 		log.Fatalln(err)
