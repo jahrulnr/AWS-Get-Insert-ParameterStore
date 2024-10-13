@@ -15,13 +15,15 @@ import (
 
 var jsonResponse GetResponse
 
+const awsCli = "aws" // or /usr/local/bin/aws
+
 func GetParameterStore() {
 	os.Mkdir(FilePath, 0755)
 	executeGetParameterStore()
 }
 
 func executeGetParameterStore() {
-	cmd := exec.Command("/usr/local/bin/aws", "ssm", "get-parameters-by-path", "--path", InitialParameter, "--recursive", "--with-decryption")
+	cmd := exec.Command(awsCli, "ssm", "get-parameters-by-path", "--path", InitialParameter, "--recursive", "--with-decryption")
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "AWS_REGION=ap-southeast-3")
 	var stdout bytes.Buffer
@@ -103,8 +105,8 @@ func InsertParameterStore() {
 	list := getPayloadFromParameterStore(FilePath, FileNameGenerate)
 	for _, payload := range list {
 		json, _ := json.Marshal(payload)
-		log.Println("/usr/local/bin/aws", "ssm", "put-parameter", "--cli-input-json", "'"+string(json)+"'", "--overwrite", "--region", "ap-southeast-3")
-		cmd := exec.Command("/usr/local/bin/aws", "ssm", "put-parameter", "--cli-input-json", string(json), "--overwrite", "--region", "ap-southeast-3")
+		log.Println(awsCli, "ssm", "put-parameter", "--cli-input-json", "'"+string(json)+"'", "--overwrite", "--region", "ap-southeast-3")
+		cmd := exec.Command(awsCli, "ssm", "put-parameter", "--cli-input-json", string(json), "--overwrite", "--region", "ap-southeast-3")
 		cmd.Env = os.Environ()
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
